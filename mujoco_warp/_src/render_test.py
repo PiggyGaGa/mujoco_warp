@@ -104,6 +104,32 @@ class RenderTest(parameterized.TestCase):
 
     self.assertEqual(center_with, center_without)
 
+  def test_splat_depth_uses_surface_threshold(self):
+    xml = """
+    <mujoco>
+      <worldbody>
+        <camera pos="0 0 2" xyaxes="1 0 0 0 1 0"/>
+        <geom type="plane" size="3 3 0.1"/>
+      </worldbody>
+    </mujoco>
+    """
+    mjm, _, m, d = test_data.fixture(xml=xml)
+    rc = mjw.create_render_context(
+      mjm,
+      cam_res=(33, 33),
+      render_rgb=True,
+      render_depth=True,
+      **_sample_splats([0.0, 0.0, 1.0], [0.25, 0.25, 0.25], [1.0, 0.0, 0.0, 0.75]),
+    )
+    mjw.render(m, d, rc)
+
+    center = 16 * 33 + 16
+    rgb = _unpack_rgb(rc.rgb_data.numpy())[0, center]
+    depth = rc.depth_data.numpy()[0, center]
+
+    self.assertGreater(int(rgb[0]), int(rgb[1]))
+    self.assertAlmostEqual(depth, 1.0, places=4)
+
   @parameterized.parameters(2, 512)
   def test_render(self, nworld: int):
     mjm, mjd, m, d = test_data.fixture("primitives.xml", nworld=nworld)
