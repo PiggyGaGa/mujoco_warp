@@ -93,6 +93,7 @@ def shade_splats(
   ray_origin: wp.vec3,
   ray_direction: wp.vec3,
   max_distance: float,
+  depth_transmittance_threshold: float,
 ) -> tuple[wp.vec3, float, float]:
   min_distance = float(0.0)
   transmittance = float(1.0)
@@ -145,7 +146,7 @@ def shade_splats(
       alpha = hit_alphas[i]
       color += wp.vec3(splat_rgba[index][0], splat_rgba[index][1], splat_rgba[index][2]) * alpha * transmittance
       transmittance *= 1.0 - alpha
-      if depth < 0.0 and transmittance < wp.static(_MIN_SPLAT_TRANSMITTANCE):
+      if depth < 0.0 and transmittance < depth_transmittance_threshold:
         depth = hit_distances[i]
 
     if num_hits < wp.static(_MAX_SPLAT_HITS):
@@ -1241,6 +1242,7 @@ def _build_megakernel(m: Model, rc: RenderContext):
         ray_origin_world,
         ray_dir_world,
         dist,
+        wp.static(rc_static["splat_depth_transmittance_threshold"]),
       )
 
     # Depth and seg are single-sample outputs: only the first pass writes them.

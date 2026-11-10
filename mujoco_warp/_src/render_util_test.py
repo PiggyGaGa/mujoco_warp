@@ -341,6 +341,27 @@ class RenderUtilTest(parameterized.TestCase):
     self.assertTrue(rc.use_textures, "use_textures")
     self.assertEqual(rc.textures.shape, (mjm.ntex,), "textures")
 
+  def test_splat_depth_transmittance_threshold(self):
+    mjm, _, _, _ = test_data.fixture(
+      xml="""
+      <mujoco>
+        <worldbody>
+          <camera/>
+        </worldbody>
+      </mujoco>
+    """
+    )
+    rc = mjw.create_render_context(mjm)
+    self.assertEqual(rc.splat_depth_transmittance_threshold, 0.1)
+
+    rc = mjw.create_render_context(mjm, splat_depth_transmittance_threshold=0.25)
+    self.assertEqual(rc.splat_depth_transmittance_threshold, 0.25)
+
+    for value in (-0.1, 0.0, 1.0, 1.1, np.nan, np.inf):
+      with self.subTest(value=value):
+        with self.assertRaisesRegex(ValueError, "strictly between 0 and 1"):
+          mjw.create_render_context(mjm, splat_depth_transmittance_threshold=value)
+
   @absltest.skipIf(
     not util_pkg.check_version("mujoco>=3.16.1"),
     "Requires MuJoCo >= 3.16.1",
