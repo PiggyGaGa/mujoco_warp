@@ -339,6 +339,7 @@ def create_render_context(
   splat_rgba: np.ndarray | None = None,
   splat_adr: np.ndarray | None = None,
   splat_group_id: np.ndarray | None = None,
+  splat_depth_transmittance_threshold: float = 0.1,
 ) -> RenderContext:
   """Creates a render context on device.
 
@@ -396,10 +397,15 @@ def create_render_context(
                if None then all splats are in one group.
     splat_group_id: Splat id for each world (nworld,). If None then all worlds
                     use the first splat group.
+    splat_depth_transmittance_threshold: Remaining transmittance below which
+      Gaussian splat depth is recorded. Must be strictly between 0 and 1.
 
   Returns:
     The render context containing rendering fields and output arrays on device.
   """
+  if not 0.0 < splat_depth_transmittance_threshold < 1.0:
+    raise ValueError("splat_depth_transmittance_threshold must be strictly between 0 and 1")
+
   mjd = mujoco.MjData(mjm)
   mujoco.mj_forward(mjm, mjd)
 
@@ -788,6 +794,7 @@ def create_render_context(
     splat_upper=splat_upper,
     splat_group_root=splat_group_root,
     splat_count=splat_count,
+    splat_depth_transmittance_threshold=splat_depth_transmittance_threshold,
   )
 
   bvh.build_scene_bvh(mjm, mjd, rc, nworld)

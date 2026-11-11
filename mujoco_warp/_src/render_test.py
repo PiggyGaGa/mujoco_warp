@@ -104,7 +104,7 @@ class RenderTest(parameterized.TestCase):
 
     self.assertEqual(center_with, center_without)
 
-  def test_splat_depth_uses_surface_threshold(self):
+  def test_splat_depth_transmittance_threshold(self):
     xml = """
     <mujoco>
       <worldbody>
@@ -114,21 +114,31 @@ class RenderTest(parameterized.TestCase):
     </mujoco>
     """
     mjm, _, m, d = test_data.fixture(xml=xml)
-    rc = mjw.create_render_context(
+    splats = _sample_splats([0.0, 0.0, 1.0], [0.25, 0.25, 0.25], [1.0, 0.0, 0.0, 0.925])
+
+    rc_default = mjw.create_render_context(
       mjm,
       cam_res=(33, 33),
       render_rgb=True,
       render_depth=True,
-      **_sample_splats([0.0, 0.0, 1.0], [0.25, 0.25, 0.25], [1.0, 0.0, 0.0, 0.75]),
+      **splats,
     )
-    mjw.render(m, d, rc)
+    mjw.render(m, d, rc_default)
+
+    rc_strict = mjw.create_render_context(
+      mjm,
+      cam_res=(33, 33),
+      render_rgb=True,
+      render_depth=True,
+      splat_depth_transmittance_threshold=0.05,
+      **splats,
+    )
+    mjw.render(m, d, rc_strict)
 
     center = 16 * 33 + 16
-    rgb = _unpack_rgb(rc.rgb_data.numpy())[0, center]
-    depth = rc.depth_data.numpy()[0, center]
-
-    self.assertGreater(int(rgb[0]), int(rgb[1]))
-    self.assertAlmostEqual(depth, 1.0, places=4)
+    self.assertEqual(rc_default.rgb_data.numpy()[0, center], rc_strict.rgb_data.numpy()[0, center])
+    self.assertAlmostEqual(rc_default.depth_data.numpy()[0, center], 1.0, places=4)
+    self.assertAlmostEqual(rc_strict.depth_data.numpy()[0, center], 2.0, places=4)
 
   @parameterized.parameters(2, 512)
   def test_render(self, nworld: int):
