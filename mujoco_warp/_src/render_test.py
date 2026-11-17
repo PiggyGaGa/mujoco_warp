@@ -130,6 +130,7 @@ class RenderTest(parameterized.TestCase):
       cam_res=(33, 33),
       render_rgb=True,
       render_depth=True,
+      splat_min_transmittance=0.01,
       splat_depth_transmittance_threshold=0.05,
       **splats,
     )

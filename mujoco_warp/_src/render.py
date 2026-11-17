@@ -46,8 +46,6 @@ wp.set_module_options({"enable_backward": False, "default_grid_stride": False})
 
 # Limit each BVH traversal pass so splat compositing uses bounded local storage.
 _MAX_SPLAT_HITS = 32
-# Stop compositing once remaining light cannot affect an 8-bit output pixel.
-_MIN_SPLAT_TRANSMITTANCE = 0.005
 # Cull splats whose alpha contribution rounds to zero in the 8-bit framebuffer.
 _MIN_SPLAT_ALPHA = 1.0 / 255.0
 
@@ -93,6 +91,7 @@ def shade_splats(
   ray_origin: wp.vec3,
   ray_direction: wp.vec3,
   max_distance: float,
+  min_transmittance: float,
   depth_transmittance_threshold: float,
 ) -> tuple[wp.vec3, float, float]:
   min_distance = float(0.0)
@@ -104,7 +103,7 @@ def shade_splats(
   hit_indices = wp.vector(-1, length=_MAX_SPLAT_HITS, dtype=int)
   hit_alphas = wp.vector(0.0, length=_MAX_SPLAT_HITS, dtype=float)
 
-  while transmittance > wp.static(_MIN_SPLAT_TRANSMITTANCE):
+  while transmittance > min_transmittance:
     num_hits = int(0)
     for i in range(wp.static(_MAX_SPLAT_HITS)):
       hit_distances[i] = max_distance
@@ -1242,6 +1241,7 @@ def _build_megakernel(m: Model, rc: RenderContext):
         ray_origin_world,
         ray_dir_world,
         dist,
+        wp.static(rc_static["splat_min_transmittance"]),
         wp.static(rc_static["splat_depth_transmittance_threshold"]),
       )
 

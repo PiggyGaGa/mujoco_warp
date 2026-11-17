@@ -2730,6 +2730,8 @@ class RenderContext:
     splat_bvh_id: Splat BVH id
     splat_group_root: Per-world selected splat BVH root
     splat_count: Number of splats
+    splat_min_transmittance: Remaining transmittance below which Gaussian splat
+      compositing stops
     splat_depth_transmittance_threshold: Remaining transmittance below which
       the renderer records Gaussian splat depth.
   """
@@ -2814,6 +2816,7 @@ class RenderContext:
   splat_bvh_id: wp.uint64
   splat_group_root: array("nworld", int)
   splat_count: int
+  splat_min_transmittance: float
   splat_depth_transmittance_threshold: float
   geom_ray_types: tuple = ()
   _megakernel: Optional[wp.Kernel] = None
